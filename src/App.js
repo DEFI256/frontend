@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { Routes, Route, BrowserRouter as Router, useNavigate } from 'react-router-dom';
 import { Layout, message } from 'antd';
 import { ethers } from 'ethers';
 import WalletConnect from './components/WalletConnect';
-import Swap from './components/Swap';
+import Swap from './components/Swap'; 
+import SwapPage from './components/SwapPage';
 import TransactionHistory from './components/TransactionHistory';
+import Pool from './components/Pool';
+import Liquidity from './components/Liquidity';
 import SwapABI from './abis/Swap.json';
 
 const { Header, Content } = Layout;
@@ -38,23 +42,27 @@ function App() {
   }, []);
 
   return (
-    <Layout>
-      <Header style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 20px' }}>
-        <WalletConnect />
-      </Header>
-      <Content style={{ padding: '20px', minHeight: 'calc(100vh - 64px)' }}>
-        {loading ? (
-          <p>正在加载合约...</p>
-        ) : swapContract ? (
-          <>
-            <Swap swapContract={swapContract} />
-            <TransactionHistory />
-          </>
-        ) : (
-          <p>无法连接到合约，请确保已安装 MetaMask 并连接到正确的网络。</p>
-        )}
-      </Content>
-    </Layout>
+    <Router>
+      <Layout>
+        <Header style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 20px' }}>
+          <WalletConnect />
+        </Header>
+        <Content style={{ padding: '20px', minHeight: 'calc(100vh - 64px)' }}>
+          {loading ? (
+            <p>正在加载合约...</p>
+          ) : swapContract ? (
+            <Routes>
+             <Route path="/" element={<Swap swapContract={swapContract} />} />
+             <Route path="/SwapPage" element={<SwapPage />} /> 
+             <Route path="/Pool" element={<Pool />} />
+             <Route path="/Liquidity" element={<Liquidity />} /> 
+            </Routes>
+          ) : (
+            <p>无法连接到合约，请确保已安装 MetaMask 并连接到正确的网络。</p>
+          )}
+        </Content>
+      </Layout>
+    </Router>
   );
 }
 
