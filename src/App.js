@@ -1,20 +1,67 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, message, Dropdown, Space } from 'antd';
+import { Layout, message, Dropdown, Space, Drawer } from 'antd';
 import { ethers } from 'ethers';
 import WalletConnect from './components/WalletConnect';
 // import Swap from './components/Swap';
 import TransactionHistory from './components/TransactionHistory';
 import SwapABI from './abis/Swap.json';
-
+import {
+  DeliveredProcedureOutlined,
+  BankOutlined,
+  PoweroffOutlined
+} from '@ant-design/icons';
 const { Header, Content } = Layout;
 
 // 替换为你部署的实际合约地址
 const SWAP_ADDRESS = '0x123456789012345678901234567890123456789A';
 function App() {
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [swapContract, setSwapContract] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hoveredNav, setHoveredNav] = useState(null);
+  const onWalletConnected = (connected) => {
+    if (connected) {
+      setIsDrawerVisible(true); // 显示 Drawer
+    }
+  };
+  // const showDrawer = () => {
+  //   setIsDrawerVisible(true);
+  // };
 
+  const closeDrawer = () => {
+    setIsDrawerVisible(false);
+  };
+
+  const customButtonStyle = {
+    backgroundColor: 'rgba(256, 256, 224)', // 淡黄色
+    borderRadius: '12px',
+    padding: '20px',
+    textAlign: 'center',
+    width: '100px',
+    height: '50px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    cursor: 'pointer',
+  };
+
+  const customButtonHoverStyle = {
+    backgroundColor: 'rgba(256, 256, 179)', // 鼠标悬停时变暗的颜色
+  };
+
+  const iconStyle = {
+    fontSize: '24px',
+    color: '#FFD700', // 黄色
+    marginBottom: '8px',
+  };
+
+  const textStyle = {
+    fontSize: '16px',
+    fontWeight: 'bold',
+    color: '#FFD700', // 黄色
+  };
+  const [hoveredButton, setHoveredButton] = useState(null);
   // 定义导航菜单项
   const tradeItems = [
     { key: 'swap', label: 'Swap' },
@@ -77,7 +124,7 @@ function App() {
           </div>
           <div className="nav-buttons">
             <Dropdown
-            overlayStyle={{ width: '100px', minWidth: '100px', textAlign: 'center' }}
+              overlayStyle={{ width: '100px', minWidth: '100px', textAlign: 'center' }}
               menu={{ items: tradeItems }}
               placement="bottom"
               onOpenChange={(open) => {
@@ -105,7 +152,7 @@ function App() {
             </Dropdown>
 
             <Dropdown
-            overlayStyle={{ width: '100px', minWidth: '100px', textAlign: 'center' }}
+              overlayStyle={{ width: '100px', minWidth: '100px', textAlign: 'center' }}
               menu={{ items: exploreItems }}
               placement="bottom"
               onOpenChange={(open) => {
@@ -133,7 +180,7 @@ function App() {
             </Dropdown>
 
             <Dropdown
-            overlayStyle={{ width: '100px', minWidth: '100px', textAlign: 'center' }}
+              overlayStyle={{ width: '100px', minWidth: '100px', textAlign: 'center' }}
               menu={{ items: poolItems }}
               placement="bottom"
               onOpenChange={(open) => {
@@ -161,7 +208,7 @@ function App() {
             </Dropdown>
           </div>
         </div>
-        <WalletConnect />
+        <WalletConnect onWalletConnected={onWalletConnected} />
       </Header>
       <Content style={{ padding: '20px', minHeight: 'calc(100vh - 64px)' }}>
         {loading ? (
@@ -175,6 +222,66 @@ function App() {
           <p>无法连接到合约，请确保已安装 MetaMask 并连接到正确的网络。</p>
         )}
       </Content>
+      {/* Drawer 组件 */}
+      <Drawer
+        title="Wallet"
+        placement="right"
+        onClose={closeDrawer}
+        open={isDrawerVisible}
+        width={350}
+        extra={
+          <PoweroffOutlined
+            style={{ fontSize: '24px', color: 'rgba(202, 213, 46, 1)', cursor: 'pointer' }}
+            onClick={closeDrawer}
+          />}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+            <img
+              src="/shit2.png" // 替换为头像图片的路径
+              alt="Avatar"
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                marginRight: '10px',
+              }}
+            />
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>0xF807...2a7B</div>
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', margin: '10px 0' }}>$0.00</div>
+          <div style={{ color: 'Khaki', fontSize: '16px' }}>▲ 0.00%</div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '20px' }}>
+          <div style={{
+            ...customButtonStyle,
+            ...(hoveredButton === 'buy' ? customButtonHoverStyle : {}),
+          }}
+            onMouseEnter={() => setHoveredButton('buy')}
+            onMouseLeave={() => setHoveredButton(null)}>
+            <div style={iconStyle}>
+              <BankOutlined />
+            </div>
+            <div style={textStyle}>Buy</div>
+          </div>
+          <div style={{
+            ...customButtonStyle,
+            ...(hoveredButton === 'receive' ? customButtonHoverStyle : {}),
+          }}
+            onMouseEnter={() => setHoveredButton('receive')}
+            onMouseLeave={() => setHoveredButton(null)}>
+            <div style={iconStyle}>
+              <DeliveredProcedureOutlined />
+            </div>
+            <div style={textStyle}>Receive</div>
+          </div>
+        </div>
+        <div style={{ textAlign: 'center', marginTop: '20px', padding: '0 20px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>Welcome to your wallet!</h3>
+          <p style={{ fontSize: '14px', color: '#666' }}>
+            Looks like you have a new wallet. Let’s get it funded before you make your first swap.
+          </p>
+        </div>
+      </Drawer>
     </Layout>
   );
 }

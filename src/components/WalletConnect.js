@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from 'antd';
 import { ethers } from 'ethers';
 
-function WalletConnect() {
+function WalletConnect({ onWalletConnected }) {
   const [account, setAccount] = useState(null);
 
   const connectWallet = async () => {
@@ -13,6 +13,9 @@ function WalletConnect() {
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
         setAccount(address);
+        if (onWalletConnected) {
+          onWalletConnected(true); // 通知父组件钱包已连接
+        }
       } catch (error) {
         console.error('Failed to connect wallet:', error);
       }
@@ -22,7 +25,7 @@ function WalletConnect() {
   };
 
   return (
-    <Button type="primary" onClick={connectWallet}>
+    <Button color="yellow" variant="solid" onClick={connectWallet}>
       {account ? `Connected: ${account.slice(0, 6)}...${account.slice(-4)}` : 'Connect Wallet'}
     </Button>
   );
