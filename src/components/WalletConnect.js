@@ -10,7 +10,7 @@ function WalletConnect() {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
         await provider.send('eth_requestAccounts', []);
-        const signer = provider.getSigner();
+        const signer = await provider.getSigner();
         const address = await signer.getAddress();
         setAccount(address);
       } catch (error) {

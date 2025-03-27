@@ -4,18 +4,22 @@ import { Table } from 'antd';
 function TransactionHistory() {
   const columns = [
     { title: 'Time', dataIndex: 'time', key: 'time' },
-    { title: 'From', dataIndex: 'from', key: 'from' },
-    { title: 'To', dataIndex: 'to', key: 'to' },
-    { title: 'Amount', dataIndex: 'amount', key: 'amount' },
+    { title: 'Type', dataIndex: 'type', key: 'type' },
+    { title: 'USD', dataIndex: 'usd', key: 'usd' },
+    { title: 'TokenA', dataIndex: 'tokena', key: 'tokena' },
+    { title: 'TokenB', dataIndex: 'tokenb', key: 'tokenb' },
+    { title: 'Wallet', dataIndex: 'wallet', key: 'wallet' },
   ];
 
   const data = [
     {
       key: '1',
+      type: 'sell eth',
       time: '2025-03-22 10:00',
-      from: 'TokenA',
-      to: 'TokenB',
-      amount: '10',
+      usd: '2488',
+      tokena: '1',
+      tokenb: '1.01',
+      wallet: '0x23817349',
     },
   ];
 
