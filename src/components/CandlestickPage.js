@@ -5,7 +5,7 @@ import CandlestickChart from './CandlestickChart';
 const CandlestickPage = ({ data, timeRange, setTimeRange }) => {
   return (
     <div>
-      <h1>K 线图</h1>
+      <h1>CandlestickChart</h1>
       <div style={{ marginBottom: 20 }}>
         <Radio.Group
           value={timeRange}

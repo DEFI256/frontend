@@ -1,25 +1,18 @@
 import React from 'react';
 import ReactECharts from 'echarts-for-react';
 
-const CandlestickChart = ({ data }) => {
+const CandlestickChart = ({ data, timeRange }) => {
   const option = {
     tooltip: {
       trigger: 'axis',
-      axisPointer: {
-        type: 'cross', // 鼠标悬停时显示十字准线
-      },
-      // Tooltip 美化样式
-      backgroundColor: 'rgba(50, 50, 50, 0.9)', // 深色背景
-      borderColor: '#87CEEB', // 天蓝色边框
-      textStyle: {
-        color: '#fff', // 白色文字
-      },
+      axisPointer: { type: 'cross' },
+      backgroundColor: 'rgba(50, 50, 50, 0.9)',
+      borderColor: '#87CEEB',
+      textStyle: { color: '#fff' },
       formatter: (params) => {
         const dataIndex = params[0].dataIndex;
-        const time = data[dataIndex][0]; // 获取时间
-        const candlestickData = data[dataIndex][1]; // 获取 K 线数据 [open, close, low, high]
-        const [open, close, low, high] = candlestickData;
-
+        const time = data[dataIndex][0];
+        const [open, close, low, high] = data[dataIndex][1];
         return `
           <div style="font-size: 14px;">
             <strong>${time}</strong><br/>
@@ -34,41 +27,49 @@ const CandlestickChart = ({ data }) => {
     xAxis: {
       type: 'category',
       data: data.map(item => item[0]),
+      axisLabel: {
+        formatter: (value) => {
+          const date = new Date(value);
+          switch (timeRange) {
+            case '1H':
+              return `${String(date.getHours()).padStart(2, '0')}:00`;
+            case '1D':
+              return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            case '1W':
+              return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            case '1M':
+              return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            case '1Y':
+              return `${date.getFullYear()}`;
+            default:
+              return value;
+          }
+        },
+      },
     },
     yAxis: {
       type: 'value',
-      axisLabel: {
-        formatter: '${value}',
-      },
+      axisLabel: { formatter: '${value}' },
     },
-    // 缩放功能
     dataZoom: [
-      {
-        type: 'inside', // 鼠标滚轮缩放
-        start: 0,
-        end: 100,
-      },
-      {
-        type: 'slider', // 底部滑块缩放
-        start: 0,
-        end: 100,
-      },
+      { type: 'inside', start: 0, end: 100 },
+      { type: 'slider', start: 0, end: 100 },
     ],
     series: [
       {
         type: 'candlestick',
         data: data.map(item => item[1]),
         itemStyle: {
-          color: '#87CEEB', // 天蓝色（上涨）
-          color0: '#FF69B4', // 粉红色（下跌）
-          borderColor: '#87CEEB', // 天蓝色边框（上涨）
-          borderColor0: '#FF69B4', // 粉红色边框（下跌）
+          color: '#87CEEB',
+          color0: '#FF69B4',
+          borderColor: '#87CEEB',
+          borderColor0: '#FF69B4',
         },
       },
     ],
   };
 
-  return <ReactECharts option={option} style={{ height: 400, width: '100%' }} />;
+  return <ReactECharts option={option} style={{ height: 400, width: '100%' }} key={timeRange} />;
 };
 
 export default CandlestickChart;

@@ -35,3 +35,14 @@ const HistoryPrice = ({ data }) => {
 };
 
 export default HistoryPrice;
+
+
+
+
+// import React from 'react';
+
+// const HistoryPrice = ({ data }) => {
+//   return <div>历史价格图表（简化版）</div>;
+// };
+
+// export default HistoryPrice;

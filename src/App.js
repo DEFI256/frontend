@@ -46,42 +46,79 @@ function App() {
 
   useEffect(() => {
     const fetchData = () => {
-      // 模拟数据，实际项目中需要通过 swapContract 或 API 获取数据
-      setHistoryPriceData([
-        { time: '2025-03-28 20:00', price: 1909.15 },
-        { time: '2025-03-28 02:00', price: 1950.00 },
-        { time: '2025-03-28 14:00', price: 1875.00 },
-      ]);
+      // 原始模拟数据
+      const rawCandlestickData = [
+        ['2025-03-28 00:00', [1900, 1950, 1880, 2300]],
+        ['2025-03-28 01:00', [2301, 2400, 2250, 2100]],
+        ['2025-03-28 02:00', [2100, 2150, 2050, 2500]],
+        ['2025-03-28 03:00', [2500, 2400, 2400, 2400]],
+        ['2025-03-28 04:00', [2400, 2450, 2350, 2900]],
+        ['2025-03-29 08:00', [3000, 3050, 2950, 3400]],
+        ['2025-04-30 14:00', [3900, 3950, 3850, 4300]],
+        ['2025-05-01 16:00', [4200, 4170, 4150, 4600]],
+        ['2026-04-30 17:00', [4600, 4650, 4550, 4500]],
+        ['2027-04-30 18:00', [3455, 5650, 3350, 5650]],
+      ];
 
-      setVolumeData([
-        { time: '2025-03-28 17:36', volume: 2000 },
-        { time: '2025-03-28 20:36', volume: 3000 },
-        { time: '2025-03-28 11:36', volume: 5000 },
-      ]);
+      // 数据聚合函数
+      const aggregateData = (rawData, frame) => {
+        const aggregated = {};
+        const parseTime = (timeStr) => new Date(timeStr);
 
-      setCandlestickData([
-        ['2025-03-28 00:00', [1900, 1950, 1880, 2300]], // 开盘价 1900，收盘价 2300（上涨）
-    ['2025-03-28 01:00', [2300, 2400, 2250, 2100]], // 开盘价 2300，收盘价 2100（下跌）
-    ['2025-03-28 02:00', [2100, 2150, 2050, 2500]], // 开盘价 2100，收盘价 2500（上涨）
-    ['2025-03-28 03:00', [2500, 2600, 2400, 2400]], // 开盘价 2500，收盘价 2400（下跌）
-    ['2025-03-28 04:00', [2400, 2450, 2350, 2900]], // 开盘价 2400，收盘价 2900（上涨）
-    ['2025-03-28 05:00', [2900, 2950, 2800, 2700]], // 开盘价 2900，收盘价 2700（下跌）
-    ['2025-03-28 06:00', [2700, 2750, 2650, 3100]], // 开盘价 2700，收盘价 3100（上涨）
-    ['2025-03-28 07:00', [3100, 3150, 3050, 3000]], // 开盘价 3100，收盘价 3000（下跌）
-    ['2025-03-28 08:00', [3000, 3050, 2950, 3400]], // 开盘价 3000，收盘价 3400（上涨）
-    ['2025-03-28 09:00', [3400, 3450, 3350, 3300]], // 开盘价 3400，收盘价 3300（下跌）
-    ['2025-03-28 10:00', [3300, 3350, 3250, 3700]], // 开盘价 3300，收盘价 3700（上涨）
-    ['2025-03-28 11:00', [3700, 3750, 3650, 3600]], // 开盘价 3700，收盘价 3600（下跌）
-    ['2025-03-28 12:00', [3600, 3650, 3550, 4000]], // 开盘价 3600，收盘价 4000（上涨）
-    ['2025-03-28 13:00', [4000, 4050, 3950, 3900]], // 开盘价 4000，收盘价 3900（下跌）
-    ['2025-03-28 14:00', [3900, 3950, 3850, 4300]], // 开盘价 3900，收盘价 4300（上涨）
-    ['2025-03-28 15:00', [4300, 4350, 4250, 4200]], // 开盘价 4300，收盘价 4200（下跌）
-    ['2025-03-28 16:00', [4200, 4250, 4150, 4600]], // 开盘价 4200，收盘价 4600（上涨）
-    ['2025-03-28 17:00', [4600, 4650, 4550, 4500]], // 开盘价 4600，收盘价 4500（下跌）
-    ['2025-03-28 18:00', [4500, 4550, 4450, 4900]], // 开盘价 4500，收盘价 4900（上涨）
-    ['2025-03-28 19:00', [4900, 4950, 4850, 4800]], // 开盘价 4900，收盘价 4800（下跌）
-    ['2025-03-28 20:00', [4800, 4850, 4750, 5200]], // 开盘价 4800，收盘价 5200（上涨）,
-    ]);
+        rawData.forEach(([time, values]) => {
+          const date = parseTime(time);
+          let key;
+
+          switch (frame) {
+            case '1H':
+              key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:00`;
+              break;
+            case '1D':
+              key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+              break;
+            case '1W':
+              const weekStart = new Date(date);
+              weekStart.setDate(date.getDate() - date.getDay() + 1);
+              key = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')}`;
+              break;
+            case '1M':
+              key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+              break;
+            case '1Y':
+              key = `${date.getFullYear()}`;
+              break;
+            default:
+              key = time;
+          }
+
+          if (!aggregated[key]) {
+            aggregated[key] = {
+              open: values[0],
+              close: values[1],
+              low: values[2],
+              high: values[3],
+              times: [],
+            };
+          } else {
+            aggregated[key].close = values[1];
+            aggregated[key].low = Math.min(aggregated[key].low, values[2]);
+            aggregated[key].high = Math.max(aggregated[key].high, values[3]);
+          }
+          aggregated[key].times.push(date);
+        });
+
+        return Object.entries(aggregated)
+          .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+          .map(([time, { open, close, low, high }]) => [time, [open, close, low, high]]);
+      };
+
+      // 根据 timeRange 聚合 candlestickData
+      const processedCandlestickData = aggregateData(rawCandlestickData, timeRange);
+      setCandlestickData(processedCandlestickData);
+
+      // 更新其他数据
+      setHistoryPriceData([...processedCandlestickData].map(([time, [open]]) => ({ time, price: open })));
+      setVolumeData([...processedCandlestickData].map(([time]) => ({ time, volume: Math.random() * 5000 })));
     };
 
     fetchData();
@@ -90,23 +127,13 @@ function App() {
   return (
     <Router>
       <Layout>
-        <Header style={{ display: 'flex', justifyContent: 'space-between', padding: '0 20px' }}>
-          <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['swap']}>
-            <Menu.Item key="swap">
-              <Link to="/">Swap</Link>
-            </Menu.Item>
-            <Menu.Item key="history-price">
-              <Link to="/history-price">历史价格</Link>
-            </Menu.Item>
-            <Menu.Item key="volume">
-              <Link to="/volume">交易量</Link>
-            </Menu.Item>
-            <Menu.Item key="candlestick">
-              <Link to="/candlestick">K 线图</Link>
-            </Menu.Item>
-            <Menu.Item key="transaction-history">
-              <Link to="/transaction-history">交易历史</Link>
-            </Menu.Item>
+        <Header style={{ display: 'flex', justifyContent: 'space-between', padding: '0 20px', width: '100%', overflow: 'visible' }}>
+          <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['swap']} style={{ flex: 1, minWidth: 0, overflow: 'visible' }}>
+            <Menu.Item key="swap"><Link to="/">Swap</Link></Menu.Item>
+            <Menu.Item key="history-price"><Link to="/history-price">HistoryPrice</Link></Menu.Item>
+            <Menu.Item key="volume"><Link to="/volume">Volume</Link></Menu.Item>
+            <Menu.Item key="candlestick"><Link to="/candlestick">CandlestickChart</Link></Menu.Item>
+            <Menu.Item key="transaction-history"><Link to="/transaction-history">TransactionHistory</Link></Menu.Item>
           </Menu>
           <WalletConnect />
         </Header>
@@ -115,44 +142,11 @@ function App() {
             <p>正在加载合约...</p>
           ) : swapContract ? (
             <Routes>
-              <Route
-                path="/"
-                element={<Swap swapContract={swapContract} />}
-              />
-              <Route
-                path="/history-price"
-                element={
-                  <HistoryPricePage
-                    data={historyPriceData}
-                    timeRange={timeRange}
-                    setTimeRange={setTimeRange}
-                  />
-                }
-              />
-              <Route
-                path="/volume"
-                element={
-                  <VolumePage
-                    data={volumeData}
-                    timeRange={timeRange}
-                    setTimeRange={setTimeRange}
-                  />
-                }
-              />
-              <Route
-                path="/candlestick"
-                element={
-                  <CandlestickPage
-                    data={candlestickData}
-                    timeRange={timeRange}
-                    setTimeRange={setTimeRange}
-                  />
-                }
-              />
-              <Route
-                path="/transaction-history"
-                element={<TransactionHistory />}
-              />
+              <Route path="/" element={<Swap swapContract={swapContract} />} />
+              <Route path="/history-price" element={<HistoryPricePage data={historyPriceData} timeRange={timeRange} setTimeRange={setTimeRange} />} />
+              <Route path="/volume" element={<VolumePage data={volumeData} timeRange={timeRange} setTimeRange={setTimeRange} />} />
+              <Route path="/candlestick" element={<CandlestickPage data={candlestickData} timeRange={timeRange} setTimeRange={setTimeRange} />} />
+              <Route path="/transaction-history" element={<TransactionHistory />} />
             </Routes>
           ) : (
             <p>无法连接到合约，请确保已安装 MetaMask 并连接到正确的网络。</p>
@@ -160,10 +154,6 @@ function App() {
         </Content>
       </Layout>
     </Router>
-  // <Routes>
-  //   <Route path="/test" element={<div>Test Page</div>} />
-  // </Routes>
-
   );
 }
 

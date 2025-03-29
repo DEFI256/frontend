@@ -31,3 +31,12 @@ const Volume = ({ data }) => {
 };
 
 export default Volume;
+
+
+// import React from 'react';
+
+// const Volume = ({ data }) => {
+//   return <div>交易量图表（简化版）</div>;
+// };
+
+// export default Volume;
