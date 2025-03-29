@@ -52,6 +52,7 @@ This is the frontend for a Decentralized Exchange (DEX), built for the COMP5568 
 ## Structure
 
 ```
+/*
 dex-frontend/
 ├── src/
 │   ├── abis/Swap.json
@@ -59,6 +60,28 @@ dex-frontend/
 │   │   ├── WalletConnect.js
 │   │   ├── Swap.js
 │   │   └── TransactionHistory.js
+│   ├── App.js
+│   ├── index.js
+│   └── index.css
+├── package.json
+└── README.md
+*/
+
+new：
+
+dex-frontend/
+├── src/
+│   ├── abis/Swap.json
+│   ├── components/
+│   │   ├── WalletConnect.js
+│   │   ├── Swap.js
+│   │   ├── TransactionHistory.js
+│   │   ├── HistoryPrice.js
+│   │   ├── Volume.js
+│   │   ├── CandlestickChart.js
+│   │   ├── HistoryPricePage.js
+│   │   ├── VolumePage.js
+│   │   └── CandlestickPage.js
 │   ├── App.js
 │   ├── index.js
 │   └── index.css
