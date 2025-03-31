@@ -9,6 +9,7 @@ const CandlestickChart = ({ data, timeRange }) => {
       backgroundColor: 'rgba(50, 50, 50, 0.9)',
       borderColor: '#87CEEB',
       textStyle: { color: '#fff' },
+      // eslint-disable-next-line no-template-curly-in-string
       formatter: (params) => {
         const dataIndex = params[0].dataIndex;
         const time = data[dataIndex][0];
@@ -49,6 +50,7 @@ const CandlestickChart = ({ data, timeRange }) => {
     },
     yAxis: {
       type: 'value',
+      // eslint-disable-next-line no-template-curly-in-string
       axisLabel: { formatter: '${value}' },
     },
     dataZoom: [

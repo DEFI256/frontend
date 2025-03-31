@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Button, Select, Input, message, Card, Row, Col, Typography, Divider } from 'antd';
-import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import Web3 from 'web3';
-import { useNavigate } from 'react-router-dom';
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 const { Option } = Select;
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // 完全保留原有的常量和ABI定义
 const fetchTokenRatio = async (tokenA, tokenB) => {
@@ -45,8 +44,6 @@ function Liquidity() {
   const [account, setAccount] = useState(null);
   const [contract, setContract] = useState(null);
   const [isTokenSelected, setIsTokenSelected] = useState(false);
-  
-  const navigate = useNavigate();
 
   useEffect(() => {
     const initWeb3 = async () => {

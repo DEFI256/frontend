@@ -13,7 +13,9 @@ const HistoryPrice = ({ data }) => {
     yAxis: {
       type: 'value',
       axisLabel: {
-        formatter: '${value}',
+        formatter: function (value) {
+          return '$' + value;
+        },
       },
     },
     series: [
