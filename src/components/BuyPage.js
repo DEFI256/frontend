@@ -2,6 +2,13 @@ import React, { useState } from 'react';
 import { Select, InputNumber, Button, message, Card, Row, Col, Typography } from 'antd';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
+import { useWallet } from '../contexts/WalletContext';
+import { 
+  usdtAddress, 
+  daiAddress, 
+  shitAddress, 
+  ethAddress 
+} from '../abis/contractAddeess';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -44,20 +51,31 @@ const TokenSelect = styled(Select)`
   }
 `;
 
+// 更新为与合约地址匹配的代币列表
 const buyableTokens = [
-  { name: 'ETH', address: '0xETH...', icon: 'Ξ', decimals: 18 },
-  { name: 'SHIT', address: '0xSHIT...', icon: '💩', decimals: 18 },
-  { name: 'USDC', address: '0xUSDC...', icon: '$', decimals: 6 },
-  { name: 'DAI', address: '0xDAI...', icon: '◈', decimals: 18 },
+  { name: 'ETH', address: ethAddress, icon: 'Ξ', decimals: 18 },
+  { name: 'SHIT', address: shitAddress, icon: '💩', decimals: 18 },
+  { name: 'USDT', address: usdtAddress, icon: '$', decimals: 18 },
+  { name: 'DAI', address: daiAddress, icon: '◈', decimals: 18 },
 ];
 
-function BuyPage({ swapContract }) {
+function BuyPage() {
   const [token, setToken] = useState('');
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const { walletAddress, contracts, signer, fetchTokenBalances } = useWallet();
 
   // 获取当前选择的代币信息
   const selectedToken = buyableTokens.find(t => t.address === token);
+  
+  // 根据选择的代币获取对应的合约
+  const getContractByAddress = (address) => {
+    if (address === ethAddress) return contracts.eth;
+    if (address === shitAddress) return contracts.shit;
+    if (address === usdtAddress) return contracts.usdt;
+    if (address === daiAddress) return contracts.dai;
+    return null;
+  };
 
   // 处理金额输入变化
   const handleAmountChange = (value) => {
@@ -73,31 +91,39 @@ function BuyPage({ swapContract }) {
 
   // 处理购买操作
   const handleBuy = async () => {
-    if (!token || amount <= 0) {
-      message.error('Please select a token and enter the amount.');
+    if (!token || amount <= 0 || !walletAddress) {
+      message.error('Please select a token, enter the amount, and connect your wallet.');
       return;
     }
 
     setLoading(true);
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+      // 获取选择的代币合约
+      const contract = getContractByAddress(token);
+      
+      if (!contract) {
+        throw new Error('Contract not found for selected token');
+      }
 
       // 将用户输入的数量转换为最小单位
       const amountInWei = parseTokenAmount(amount, token);
 
-      // 调用合约的mint函数
-      const tx = await swapContract.connect(signer).mint(
-        token,
-        amountInWei
-      );
-
+      // 调用合约的mint函数 - 参数：接收者地址和数量
+      const tx = await contract.connect(signer).mint(walletAddress, amountInWei);
+      
+      // 等待交易确认
       await tx.wait();
 
-      message.success(`Success! ${amount} ${selectedToken.name}`);
+      // 成功提示
+      message.success(`Successfully minted ${amount} ${selectedToken.name} to your wallet!`);
+      
+      // 刷新代币余额 (如果useWallet有此方法)
+      if (typeof fetchTokenBalances === 'function') {
+        fetchTokenBalances();
+      }
     } catch (error) {
-      console.error('Fail.', error);
-      message.error(`Fail. ${error.message}`);
+      console.error('Failed to mint tokens:', error);
+      message.error(`Failed to mint tokens: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -105,7 +131,7 @@ function BuyPage({ swapContract }) {
 
   return (
     <StyledCard>
-      <Title level={3} style={{ textAlign: 'center', marginBottom: 24 }}>Buy</Title>
+      <Title level={3} style={{ textAlign: 'center', marginBottom: 24 }}>Buy Tokens</Title>
 
       <TokenInputContainer>
         <Row justify="space-between" align="middle" style={{ marginBottom: 8 }}>
@@ -160,7 +186,7 @@ function BuyPage({ swapContract }) {
         loading={loading}
         disabled={!token || amount <= 0}
       >
-        {token ? `Buy ${amount} ${selectedToken.name}` : 'Please select a token.'}
+        {token ? `Buy ${amount} ${selectedToken.name}` : 'Select a token'}
       </BuyButton>
     </StyledCard>
   );

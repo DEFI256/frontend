@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Dropdown, Space, Drawer } from 'antd';
+import { ConfigProvider, Layout, Dropdown, Space, Drawer } from 'antd';
 import { useNavigate, Routes, Route, BrowserRouter as Router } from 'react-router-dom';
 import { WalletProvider, useWallet } from './contexts/WalletContext';
 import WalletConnect from './components/WalletConnect';
@@ -397,9 +397,10 @@ function AppContent() {
 // 外层组件提供上下文
 function App() {
   return (
-    <WalletProvider>
-      <Router><AppContent /></Router>
-    </WalletProvider>
+    <ConfigProvider>
+      <WalletProvider>
+        <Router><AppContent /></Router>
+      </WalletProvider></ConfigProvider>
   );
 }
 
