@@ -56,11 +56,10 @@ function SwapPage({ swapContract }) {
   // 假设支持10种代币，实际地址从后端获取
   const tokens = [
     { name: 'ETH', address: '0xETH...', icon: 'Ξ' },
+    { name: 'SHIT', address: '0xSHIT...', icon: '💩' },
     { name: 'USDT', address: '0xUSDT...', icon: '$' },
-    { name: 'WBTC', address: '0xWBTC...', icon: '₿' },
     { name: 'DAI', address: '0xDAI...', icon: '◈' },
     { name: 'UNI', address: '0xUNI...', icon: '🦄' },
-    { name: 'SHIT', address: '0xSHIT...', icon: '💩' },
   ];
 
     // 模拟获取代币兑换率，实际代码中需要从合约中获取
@@ -182,7 +181,6 @@ function SwapPage({ swapContract }) {
               value={amountOut} // 显示动态计算的输出金额
               size="large"
               placeholder="0.0"
-              inputStyle={{ textAlign: 'left' }}
               disabled
             />
           </Col>

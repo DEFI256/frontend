@@ -1,0 +1,16 @@
+export const usdtAddress = "0x6ccAc1e10558C4A396e61f53d3261ABF27F98b14";
+export const daiAddress = "0x380Cf56447a13fbC49403b55D8C7e8E5C44fa7c3";
+export const shitAddress = "0xe24fb6bea6D2740926E4fD445748eE7543E7aa13";
+export const ethAddress = "0xd7Fc6C5d6B2159d35caD8C85a67169De4619BfCd";
+export const usdtDaiLpTokenAddress = "0x05cDcca9E63f634F995b3071dE396CC3E41E28da";
+export const usdtEthLpTokenAddress = "0x4298bC6a0003cc8Bf866e30Af201EaeeADa6d9a4";
+export const usdtShitLpTokenAddress = "0x78106a494688A03aba40083fFb4bf4c695e4300d";
+export const daiEthLpTokenAddress = "0xcAB4B277839407Ad880CF10D824E6B0f4b747fDd";
+export const shitEthLpTokenAddress = "0x20890ad287C3c81A39f737374CDeC12468E49603";
+export const daiShitLpTokenAddress = "0x24D966C682CfD75984ce6Cc0E02E603454690757";
+export const usdtDaiPoolAddress = "0xe0CCd32E12Bf0a8219B0dB04D2C5373470618922"; 
+export const usdtEthPoolAddress = "0x5FA72f8def41B0DB28754ac106d19E6ef499FFB4";
+export const usdtShitPoolAddress = "0x272977136177E972Da8eDc8C3f53301880bC5AD5"; 
+export const daiEthPoolAddress = "0xc3C66bCD0F67904De7CB5ac376207950e8DA8B38"; 
+export const shitEthPoolAddress = "0xACa235B301Be63ddad07E7822Bc6029Ef929d343"; 
+export const daiShitPoolAddress = "0x72bB028f25107644A51ba05354Fe9Ba5ab468AdC"; 

@@ -12,7 +12,7 @@ const Volume = ({ data }) => {
     },
     yAxis: {
       type: 'value',
-      axisLabel: {
+        axisLabel: {
         formatter: function (value) {
           return '$' + value;
         },

@@ -32,7 +32,7 @@ This is the frontend for a Decentralized Exchange (DEX), built for the COMP5568 
 
 3. **Configure Contract**
    - Edit `src/App.js`: Replace `SWAP_ADDRESS` with your contract address.
-   - Update `src/abis/Swap.json` with your contract ABI.
+   - Update `src/abis/StableSwapPool.json` with your contract ABI.
 
 4. **Start Local Backend (Optional)**
    - For Hardhat: `npx hardhat node` in a separate terminal.
@@ -54,7 +54,7 @@ This is the frontend for a Decentralized Exchange (DEX), built for the COMP5568 
 ```
 dex-frontend/
 ├── src/
-│   ├── abis/Swap.json
+│   ├── abis/StableSwapPool.json
 │   ├── components/
 │   │   ├── WalletConnect.js
 │   │   ├── Swap.js

@@ -1,33 +1,36 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from 'antd';
-import { ethers } from 'ethers';
+import { useWallet } from '../contexts/WalletContext';
 
 function WalletConnect({ onWalletConnected }) {
-  const [account, setAccount] = useState(null);
+  const { walletAddress, isConnected, connectWallet, formatAddress } = useWallet();
 
-  const connectWallet = async () => {
-    if (window.ethereum) {
-      try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send('eth_requestAccounts', []);
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        setAccount(address);
-        if (onWalletConnected) {
-          onWalletConnected(true); // 通知父组件钱包已连接
-        }
-      } catch (error) {
-        console.error('Failed to connect wallet:', error);
-      }
-    } else {
-      alert('Please install MetaMask!');
+  const handleConnect = async () => {
+    const connected = await connectWallet();
+    if (connected && onWalletConnected) {
+      onWalletConnected(true);
     }
   };
 
   return (
-    <Button color="yellow" variant="solid" onClick={connectWallet}>
-      {account ? `Connected: ${account.slice(0, 6)}...${account.slice(-4)}` : 'Connect Wallet'}
-    </Button>
+    <div>
+    {!isConnected ? (
+      <Button 
+        type="primary"
+        style={{ backgroundColor: '#FFD700', borderColor: '#FFD700' }}
+        onClick={handleConnect}
+      >
+        Connect Wallet
+      </Button>
+    ) : (
+      <Button
+        style={{ backgroundColor: '#FFD700', borderColor: '#FFD700', color: '#000' }}
+        onClick={() => onWalletConnected(true)}
+      >
+        {formatAddress(walletAddress)}
+      </Button>
+    )}
+  </div>
   );
 }
 
