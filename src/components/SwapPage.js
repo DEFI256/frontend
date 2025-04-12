@@ -59,7 +59,6 @@ function SwapPage({ swapContract }) {
     { name: 'SHIT', address: '0xSHIT...', icon: '💩' },
     { name: 'USDT', address: '0xUSDT...', icon: '$' },
     { name: 'DAI', address: '0xDAI...', icon: '◈' },
-    { name: 'UNI', address: '0xUNI...', icon: '🦄' },
   ];
 
     // 模拟获取代币兑换率，实际代码中需要从合约中获取
