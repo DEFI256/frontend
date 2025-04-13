@@ -48,7 +48,6 @@ const TokenSelect = styled(Select)`
 
 function SwapPage() {
   // 从 WalletContext 获取所有合约实例
-  // 注意：每个合约对象都包含其本身的 address 属性
   const { contracts } = useWallet();
 
   // 代币选择
@@ -59,15 +58,74 @@ function SwapPage() {
   // 兑换结果等信息
   const [exchangeRate, setExchangeRate] = useState(0);
   const [isAToB, setIsAToB] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // 动态获取可用的代币列表
-  // 这里通过  contracts.<代币合约>.address 获取代币地址，而不是从文件中导入
   const tokens = [
-    { name: 'ETH',  address: contracts.eth?.target,  icon: 'Ξ' },
+    { name: 'ETH', address: contracts.eth?.target, icon: 'Ξ' },
     { name: 'SHIT', address: contracts.shit?.target, icon: '💩' },
     { name: 'USDT', address: contracts.usdt?.target, icon: '$' },
-    { name: 'DAI',  address: contracts.dai?.target,  icon: '◈' },
+    { name: 'DAI', address: contracts.dai?.target, icon: '◈' },
   ];
+
+  // 根据代币选择确定 isAToB 值
+  const determineIsAToB = useCallback((inToken, outToken) => {
+    if (!contracts) return true;
+    
+    // 第一个是 USDT 时，isAToB 为 true
+    if (inToken === contracts.usdt?.target) {
+      return true;
+    }
+    
+    // 第一个是 DAI，第二个是 SHIT 或 ETH 时，isAToB 为 true
+    if (inToken === contracts.dai?.target && 
+        (outToken === contracts.shit?.target || outToken === contracts.eth?.target)) {
+      return true;
+    }
+    
+    // 第一个是 SHIT，第二个是 ETH 时，isAToB 为 true
+    if (inToken === contracts.shit?.target && outToken === contracts.eth?.target) {
+      return true;
+    }
+    
+    // 其余情况都是 false
+    return false;
+  }, [contracts]);
+
+  // 监听代币选择变化，更新 isAToB
+  useEffect(() => {
+    if (tokenIn && tokenOut && tokenIn !== tokenOut) {
+      setIsAToB(determineIsAToB(tokenIn, tokenOut));
+    }
+  }, [tokenIn, tokenOut, determineIsAToB]);
+
+  // 交换代币的处理函数
+  const handleSwapTokens = () => {
+    // 先交换代币
+    const tempTokenIn = tokenIn;
+    const tempTokenOut = tokenOut;
+    setTokenIn(tempTokenOut);
+    setTokenOut(tempTokenIn);
+    
+    // 根据交换后的代币确定新的 isAToB 值
+    setIsAToB(determineIsAToB(tempTokenOut, tempTokenIn));
+  };
+
+  // 设置输入代币的处理函数
+  const handleTokenInChange = (value) => {
+    setTokenIn(value);
+    if (tokenOut && value !== tokenOut) {
+      setIsAToB(determineIsAToB(value, tokenOut));
+    }
+  };
+
+  // 设置输出代币的处理函数
+  const handleTokenOutChange = (value) => {
+    setTokenOut(value);
+    if (tokenIn && value !== tokenIn) {
+      setIsAToB(determineIsAToB(tokenIn, value));
+    }
+  };
 
   // 根据用户选择，确定要调用的池子合约
   const getPoolContract = useCallback(() => {
@@ -111,7 +169,7 @@ function SwapPage() {
     return null;
   }, [contracts, tokenIn, tokenOut]);
 
-  // 将 getPoolContract 放进 useCallback 的依赖
+  // 获取交易详情
   const fetchSwapDetails = useCallback(async () => {
     if (!tokenIn || !tokenOut || amountIn <= 0) return;
     const poolContract = getPoolContract();
@@ -138,11 +196,81 @@ function SwapPage() {
     setAmountIn(value || 0);
   };
 
-  // 交换代币
-  const handleSwapTokens = () => {
-    setTokenIn(tokenOut);
-    setTokenOut(tokenIn);
-    setIsAToB(!isAToB);
+  // 获取输入代币的合约
+  const getTokenInContract = () => {
+    if (tokenIn === contracts.usdt?.target) return contracts.usdt;
+    if (tokenIn === contracts.dai?.target) return contracts.dai;
+    if (tokenIn === contracts.shit?.target) return contracts.shit;
+    if (tokenIn === contracts.eth?.target) return contracts.eth;
+    return null;
+  };
+
+  // 获取代币名称
+  const getTokenName = (address) => {
+    return tokens.find(t => t.address === address)?.name || 'Unknown';
+  };
+
+  const handleSwap = async () => {
+    if (!tokenIn || !tokenOut || amountIn <= 0) {
+      message.error('Please select tokens and enter a valid amount.');
+      return;
+    }
+
+    const poolContract = getPoolContract();
+    if (!poolContract) {
+      message.error('No pool contract found for the selected tokens.');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const amountInWei = ethers.parseUnits(amountIn.toString(), 18);
+      const minAmountOut = ethers.parseUnits((amountIn * exchangeRate * 0.95).toString(), 18); // 5% 滑点保护
+      
+      const tokenContract = getTokenInContract();
+      if (!tokenContract) {
+        message.error('Token contract not found');
+        setLoading(false);
+        return;
+      }
+      
+      // 执行授权
+      const tokenName = getTokenName(tokenIn);
+      message.loading(`Approving ${tokenName} transfer...`, 0);
+      
+      try {
+        console.log(tokenContract, poolContract, amountInWei);
+        const approveTx = await tokenContract.approve(poolContract.target, amountInWei);
+        await approveTx.wait();
+        message.destroy();
+        message.success(`${tokenName} approved!`);
+      } catch (error) {
+        message.destroy();
+        message.error(`Failed to approve ${tokenName}: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+
+      // 执行交换
+      message.loading('Processing swap transaction...', 0);
+      console.log(amountInWei, isAToB, minAmountOut);
+      const swapTx = await poolContract.swap(amountInWei, isAToB, minAmountOut);
+      await swapTx.wait();
+      
+      message.destroy();
+      message.success('Swap successful!');
+      
+      // 刷新交换详情
+      fetchSwapDetails();
+      
+    } catch (error) {
+      console.error('Swap failed:', error);
+      message.destroy();
+      message.error(`Swap failed: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -164,14 +292,16 @@ function SwapPage() {
               size="large"
               placeholder="0.0"
               style={{ width: '100%' }}
+              disabled={loading}
             />
           </Col>
           <Col span={10}>
             <TokenSelect
               size="large"
-              onChange={setTokenIn}
+              onChange={handleTokenInChange}
               placeholder="Select token"
               value={tokenIn}
+              disabled={loading}
             >
               {tokens.map((token) => (
                 <Option key={token.name} value={token.address}>
@@ -192,6 +322,7 @@ function SwapPage() {
           shape="circle"
           icon={<SwapOutlined style={{ fontSize: 20 }} />}
           onClick={handleSwapTokens}
+          disabled={loading}
         />
       </div>
 
@@ -212,9 +343,10 @@ function SwapPage() {
           <Col span={10}>
             <TokenSelect
               size="large"
-              onChange={setTokenOut}
+              onChange={handleTokenOutChange}
               placeholder="Select token"
               value={tokenOut}
+              disabled={loading}
             >
               {tokens.map((token) => (
                 <Option key={token.name} value={token.address}>
@@ -235,11 +367,7 @@ function SwapPage() {
         <Text type="secondary">Exchange Rate</Text>
         <Text>
           {exchangeRate
-            ? `1 ${
-                tokens.find((t) => t.address === tokenIn)?.name
-              } = ${exchangeRate.toFixed(6)} ${
-                tokens.find((t) => t.address === tokenOut)?.name
-              }`
+            ? `1 ${getTokenName(tokenIn)} = ${exchangeRate.toFixed(6)} ${getTokenName(tokenOut)}`
             : 'Calculating...'}
         </Text>
       </Row>
@@ -247,12 +375,12 @@ function SwapPage() {
       <SwapButton
         type="primary"
         size="large"
-        disabled={!tokenIn || !tokenOut || amountIn <= 0 || tokenIn === tokenOut}
+        loading={loading}
+        disabled={!tokenIn || !tokenOut || amountIn <= 0 || tokenIn === tokenOut || loading}
+        onClick={handleSwap}
       >
         {tokenIn && tokenOut
-          ? `Swap ${
-              tokens.find((t) => t.address === tokenIn)?.name
-            } to ${tokens.find((t) => t.address === tokenOut)?.name}`
+          ? `Swap ${getTokenName(tokenIn)} to ${getTokenName(tokenOut)}`
           : 'Select Tokens'}
       </SwapButton>
     </StyledCard>

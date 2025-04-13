@@ -132,6 +132,7 @@ export function WalletProvider({ children }) {
       // 获取 USDT 余额
       if (contracts.usdt) {
         const usdtBalance = await contracts.usdt.balanceOf(walletAddress);
+        console.log(222, usdtBalance);
         const formattedAmount = parseFloat(ethers.formatUnits(usdtBalance, 18)).toFixed(2);
         balances.usdt = {
           amount: formattedAmount,
@@ -160,8 +161,8 @@ export function WalletProvider({ children }) {
       }
   
       // 获取 ETH 余额
-      if (provider) {
-        const ethBalance = await provider.getBalance(walletAddress);
+      if (contracts.eth) {
+        const ethBalance = await contracts.eth.balanceOf(walletAddress);
         const formattedAmount = parseFloat(ethers.formatUnits(ethBalance, 18)).toFixed(2);
         balances.eth = {
           amount: formattedAmount,
@@ -173,7 +174,7 @@ export function WalletProvider({ children }) {
     } catch (error) {
       console.error('获取代币余额失败:', error);
     }
-  }, [walletAddress, contracts, provider]);
+  }, [walletAddress, contracts]);
 
   // 处理账户变化
   const handleAccountsChanged = useCallback((accounts) => {
