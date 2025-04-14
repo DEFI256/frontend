@@ -23,7 +23,7 @@ const StyledCard = styled(Card)`
 
 function Liquidity() {
   const { contracts } = useWallet();
-  
+
   // 代币选择和金额状态
   const [tokenA, setTokenA] = useState('');
   const [tokenB, setTokenB] = useState('');
@@ -31,6 +31,7 @@ function Liquidity() {
   const [amountA, setAmountA] = useState('');
   const [amountB, setAmountB] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isA, setIsA] = useState(false); // 用于判断是A到B还是B到A
   const [isTokenSelected, setIsTokenSelected] = useState(false);
 
   // 动态获取可用的代币列表
@@ -44,7 +45,7 @@ function Liquidity() {
   // 根据选择的代币确定对应的池子合约
   const getPoolContract = useCallback(() => {
     if (!contracts?.usdt || !contracts?.dai || !contracts?.shit || !contracts?.eth) return null;
-    
+
     if (
       (tokenA === contracts.usdt.target && tokenB === contracts.dai.target) ||
       (tokenA === contracts.dai.target && tokenB === contracts.usdt.target)
@@ -81,7 +82,7 @@ function Liquidity() {
     ) {
       return contracts.daiShitPool;
     }
-    
+
     return null;
   }, [contracts, tokenA, tokenB]);
 
@@ -100,20 +101,78 @@ function Liquidity() {
 
     setLoading(true);
     try {
-      // const amountAWei = ethers.parseUnits(amountA.toString(), 18);
-      // const amountBWei = ethers.parseUnits(amountB.toString(), 18);
+      const amountAWei = ethers.parseUnits(amountA.toString(), 18);
+      const amountBWei = ethers.parseUnits(amountB.toString(), 18);
       const minLpAmount = 0; // 最小流动性代币数量，可以设置一个合理的值
-      // 调用合约的 addLiquidity 函数
-      const tx = await poolContract.addLiquidity(1, 1, minLpAmount);
-      message.loading('Transaction is being processed...', 0);
 
-      // // 等待交易完成
-      await tx.wait();
-      
+      // 获取代币 A 的合约实例
+      let tokenAContract;
+      if (tokenA === contracts.usdt.target) tokenAContract = contracts.usdt;
+      else if (tokenA === contracts.dai.target) tokenAContract = contracts.dai;
+      else if (tokenA === contracts.shit.target) tokenAContract = contracts.shit;
+      else if (tokenA === contracts.eth.target) tokenAContract = contracts.eth;
+
+      // 获取代币 B 的合约实例
+      let tokenBContract;
+      if (tokenB === contracts.usdt.target) tokenBContract = contracts.usdt;
+      else if (tokenB === contracts.dai.target) tokenBContract = contracts.dai;
+      else if (tokenB === contracts.shit.target) tokenBContract = contracts.shit;
+      else if (tokenB === contracts.eth.target) tokenBContract = contracts.eth;
+
+      if (!tokenAContract || !tokenBContract) {
+        message.error('Token contract not found');
+        setLoading(false);
+        return;
+      }
+
+      // 获取代币名称
+      const tokenAName = supportedTokens.find(t => t.address === tokenA)?.name;
+      const tokenBName = supportedTokens.find(t => t.address === tokenB)?.name;
+
+      // 批准代币 A
+      message.loading(`Approving ${tokenAName}...`, 0);
+      try {
+        const approveTxA = await tokenAContract.approve(poolContract.target, amountAWei);
+        await approveTxA.wait();
+        message.destroy();
+        message.success(`${tokenAName} approved!`);
+      } catch (error) {
+        message.destroy();
+        message.error(`Failed to approve ${tokenAName}: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+
+      // 批准代币 B
+      message.loading(`Approving ${tokenBName}...`, 0);
+      try {
+        const approveTxB = await tokenBContract.approve(poolContract.target, amountBWei);
+        await approveTxB.wait();
+        message.destroy();
+        message.success(`${tokenBName} approved!`);
+      } catch (error) {
+        message.destroy();
+        message.error(`Failed to approve ${tokenBName}: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+
+      // 添加流动性
+      message.loading('Adding liquidity...', 0);
+      console.log(poolContract, amountAWei, amountBWei, minLpAmount);
+      if (isA) {
+        console.log(isA,amountAWei, amountBWei, minLpAmount);
+        const tx = await poolContract.addLiquidity(amountAWei, amountBWei, minLpAmount);
+        await tx.wait();
+      } else {
+        console.log(isA,amountBWei, amountAWei, minLpAmount);
+        const tx = await poolContract.addLiquidity(amountBWei, amountAWei, minLpAmount);
+        await tx.wait();
+      }
       // 成功提示
       message.destroy();
       message.success('Liquidity added successfully!');
-      
+
       // 重置输入
       setAmountA('');
       setAmountB('');
@@ -126,29 +185,47 @@ function Liquidity() {
     }
   };
 
-  // 点击继续按钮
-  const handleContinue = async () => {
-    if (!tokenA || !tokenB || tokenA === tokenB) {
-      message.error('Please choose different tokens');
-      return;
-    }
+// 点击继续按钮
+const handleContinue = async () => {
+  if (!tokenA || !tokenB || tokenA === tokenB) {
+    message.error('Please choose different tokens');
+    return;
+  }
 
-    setIsTokenSelected(true);
-  };
+  // 当所有的第一个选择是usdt的时候
+  if (tokenA === contracts.usdt.target) {
+    setIsA(true);
+  }
+  // 第一个选择是dai,第二个选择是shit或eth的时候
+  else if (tokenA === contracts.dai.target &&
+    (tokenB === contracts.shit.target || tokenB === contracts.eth.target)) {
+    setIsA(true);
+  }
+  // 第一个选择是shit第二个选择是eth的时候
+  else if (tokenA === contracts.shit.target && tokenB === contracts.eth.target) {
+    setIsA(true);
+  }
+  // 其余的情况都是false
+  else {
+    setIsA(false);
+  }
 
-  // Token A 变化
-  const handleTokenAChange = (value) => {
-    if (!isTokenSelected) {
-      setTokenA(value);
-    }
-  };
+  setIsTokenSelected(true);
+};
 
-  // Token B 变化
-  const handleTokenBChange = (value) => {
-    if (!isTokenSelected) {
-      setTokenB(value);
-    }
-  };
+// Token A 变化
+const handleTokenAChange = (value) => {
+  if (!isTokenSelected) {
+    setTokenA(value);
+  }
+};
+
+// Token B 变化
+const handleTokenBChange = (value) => {
+  if (!isTokenSelected) {
+    setTokenB(value);
+  }
+};
 
   // 返回选择代币界面
   const handleBack = () => {
@@ -160,46 +237,61 @@ function Liquidity() {
     setIsTokenSelected(false);
   };
 
-  // 输入金额 A 变化
-  const handleAmountAChange = async (e) => {
-    const value = e.target.value;
-    setAmountA(value);
+// 输入金额 A 变化
+const handleAmountAChange = async (e) => {
+  const value = e.target.value;
+  setAmountA(value);
 
-    if (isTokenSelected && value && parseFloat(value) > 0) {
-      try {
-        const poolContract = getPoolContract();
-        if (!poolContract) return;
+  if (isTokenSelected && value && parseFloat(value) > 0) {
+    try {
+      const poolContract = getPoolContract();
+      if (!poolContract) return;
 
-        const amountInWei = ethers.parseUnits(value, 18);
-        const isA = true; // 从 A 到 B 的方向
-        const pairedAmount = await poolContract.getPairedAmount(amountInWei, isA);
-        
-        const pairedAmountFormatted = ethers.formatUnits(pairedAmount, 18);
-        setAmountB(pairedAmountFormatted);
-        
-        // 计算比率
-        const ratio = parseFloat(pairedAmountFormatted) / parseFloat(value);
-        setRatio(ratio);
-      } catch (error) {
-        console.error('Failed to fetch paired amount:', error);
-      }
-    } else if (value === '' || parseFloat(value) === 0) {
-      setAmountB('');
+      const amountInWei = ethers.parseUnits(value, 18);
+      const pairedAmount = await poolContract.getPairedAmount(amountInWei, isA);
+
+      const pairedAmountFormatted = ethers.formatUnits(pairedAmount, 18);
+      setAmountB(pairedAmountFormatted);
+
+      // 计算比率
+      const ratio = parseFloat(pairedAmountFormatted) / parseFloat(value);
+      setRatio(ratio);
+    } catch (error) {
+      console.error('Failed to fetch paired amount:', error);
     }
-  };
+  } else if (value === '' || parseFloat(value) === 0) {
+    setAmountB('');
+  }
+};
 
-  // 输入金额 B 变化（可选功能）
-  const handleAmountBChange = async (e) => {
-    const value = e.target.value;
-    setAmountB(value);
-    
-    if (isTokenSelected && value && parseFloat(value) > 0 && ratio) {
-      setAmountA((parseFloat(value) / ratio).toString());
-    } else if (value === '' || parseFloat(value) === 0) {
-      setAmountA('');
+// 输入金额 B 变化（可选功能）
+const handleAmountBChange = async (e) => {
+  const value = e.target.value;
+  setAmountB(value);
+
+  if (isTokenSelected && value && parseFloat(value) > 0) {
+    try {
+      const poolContract = getPoolContract();
+      if (!poolContract) return;
+
+      const amountInWei = ethers.parseUnits(value, 18);
+      // 这里使用 !isA 作为参数，表示反向计算
+      const pairedAmount = await poolContract.getPairedAmount(amountInWei, !isA);
+
+      const pairedAmountFormatted = ethers.formatUnits(pairedAmount, 18);
+      setAmountA(pairedAmountFormatted);
+
+      // 计算比率 (B/A)
+      const newRatio = parseFloat(value) / parseFloat(pairedAmountFormatted);
+      setRatio(newRatio);
+    } catch (error) {
+      console.error('Failed to fetch paired amount:', error);
     }
-  };
-  
+  } else if (value === '' || parseFloat(value) === 0) {
+    setAmountA('');
+  }
+};
+
 
   return (
     <Layout style={{ background: '#f5f7fa', minHeight: '100vh' }}>
