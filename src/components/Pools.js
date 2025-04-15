@@ -78,8 +78,8 @@ function Pools() {
             key: pool.index,
             pool: pool.name,
             icon: pool.icon,
-            reserveA: `${reserveA.toString()} A`, // 直接使用后端返回的值
-            reserveB: `${reserveB.toString()} B`, // 直接使用后端返回的值
+            reserveA: `${ethers.formatUnits(reserveA.toString(), 18)} A`, // 直接使用后端返回的值
+            reserveB: `${ethers.formatUnits(reserveB.toString(), 18)} B`, // 直接使用后端返回的值
             totalLiquidity: `${totalLiquidity.toString()}`, // 直接使用后端返回的值
             price: `${parseFloat(ethers.formatUnits(priceCurrent, 18)).toFixed(6)}`, // 假设价格仍然是 18 位小数
           };

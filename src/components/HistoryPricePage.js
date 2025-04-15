@@ -24,3 +24,5 @@ const HistoryPricePage = ({ data, timeRange, setTimeRange }) => {
 };
 
 export default HistoryPricePage;
+
+

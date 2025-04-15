@@ -24,3 +24,5 @@ const VolumePage = ({ data, timeRange, setTimeRange }) => {
 };
 
 export default VolumePage;
+
+

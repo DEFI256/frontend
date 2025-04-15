@@ -24,3 +24,5 @@ const CandlestickPage = ({ data, timeRange, setTimeRange }) => {
 };
 
 export default CandlestickPage;
+
+
