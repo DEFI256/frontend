@@ -4,6 +4,7 @@ import { SwapOutlined } from '@ant-design/icons';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 import { useWallet } from '../contexts/WalletContext';
+import { useTransactions, getPoolTypeByAddress } from '../contexts/TransactionContext';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -49,6 +50,7 @@ const TokenSelect = styled(Select)`
 function SwapPage() {
   // 从 WalletContext 获取所有合约实例
   const { contracts } = useWallet();
+  const { addTransaction } = useTransactions();
 
   // 代币选择
   const [tokenIn, setTokenIn] = useState('');
@@ -215,13 +217,13 @@ function SwapPage() {
       message.error('Please select tokens and enter a valid amount.');
       return;
     }
-
+  
     const poolContract = getPoolContract();
     if (!poolContract) {
       message.error('No pool contract found for the selected tokens.');
       return;
     }
-
+  
     setLoading(true);
     
     try {
@@ -240,7 +242,6 @@ function SwapPage() {
       message.loading(`Approving ${tokenName} transfer...`, 0);
       
       try {
-        console.log(tokenContract, poolContract, amountInWei);
         const approveTx = await tokenContract.approve(poolContract.target, amountInWei);
         await approveTx.wait();
         message.destroy();
@@ -251,23 +252,94 @@ function SwapPage() {
         setLoading(false);
         return;
       }
-
+  
       // 执行交换
       message.loading('Processing swap transaction...', 0);
-      console.log(amountInWei, isAToB, minAmountOut);
+      
+      // 监听 SwapExecuted 事件的回调函数
+      const handleSwapEvent = (timestamp, priceCurrent, eventIsAToB, reserveA, reserveB, amountIn, amountOut, event) => {
+        const formattedData = {
+          timestamp: new Date(Number(timestamp) * 1000).toLocaleString(),
+          priceCurrent: ethers.formatUnits(priceCurrent, 18),
+          isAToB: eventIsAToB,
+          reserveA: ethers.formatUnits(reserveA, 18),
+          reserveB: ethers.formatUnits(reserveB, 18),
+          amountIn: ethers.formatUnits(amountIn, 18),
+          amountOut: ethers.formatUnits(amountOut, 18),
+          transactionHash: event.transactionHash,
+          // 添加交易类型和代币信息，便于后续展示
+          type: 'swap',
+          tokenIn: getTokenName(tokenIn),
+          tokenOut: getTokenName(tokenOut),
+          blockNumber: event.blockNumber,
+          date: new Date(Number(timestamp) * 1000)
+        };
+  
+        console.log("SwapExecuted Event Data:", formattedData);
+        // 将交易记录添加到对应的池子
+        const poolType = getPoolTypeByAddress(poolContract.target, contracts);
+        if (poolType) {
+          console.log("Adding transaction to pool:", poolType, formattedData);
+          
+          addTransaction(poolType, formattedData);
+        }
+
+        message.success(
+          <div>
+            <div>Swap successful!</div>
+            <div style={{ fontSize: '12px', marginTop: '8px' }}>
+              <div>Price: {parseFloat(formattedData.priceCurrent).toFixed(6)}</div>
+              <div>You swapped: {parseFloat(formattedData.amountIn).toFixed(6)} {getTokenName(tokenIn)}</div>
+              <div>You received: {parseFloat(formattedData.amountOut).toFixed(6)} {getTokenName(tokenOut)}</div>
+            </div>
+          </div>,
+          8 // 显示8秒
+        );
+        
+        // 解除事件监听
+        poolContract.off('SwapExecuted', handleSwapEvent);
+      };
+  
+      // 在执行交换之前，先设置事件监听
+      poolContract.on('SwapExecuted', handleSwapEvent);
+      
+      // 执行交换
       const swapTx = await poolContract.swap(amountInWei, isAToB, minAmountOut);
+      message.loading('Transaction submitted, waiting for confirmation...', 0);
       await swapTx.wait();
       
+      // 交易已确认，但我们让事件处理器显示更详细的信息
       message.destroy();
-      message.success('Swap successful!');
+      
+      // 如果5秒内没有收到事件，也显示一个基本的成功消息
+      const eventTimeout = setTimeout(() => {
+        message.success('Swap completed successfully!');
+        poolContract.off('SwapExecuted', handleSwapEvent); // 移除事件监听
+      }, 5000);
+      
+      // 在组件清理时或收到事件时清除超时
+      const clearEventTimeout = () => {
+        clearTimeout(eventTimeout);
+      };
       
       // 刷新交换详情
       fetchSwapDetails();
+      
+      return () => {
+        clearEventTimeout();
+        poolContract.off('SwapExecuted', handleSwapEvent);
+      };
       
     } catch (error) {
       console.error('Swap failed:', error);
       message.destroy();
       message.error(`Swap failed: ${error.message}`);
+      
+      // 确保移除任何已添加的事件监听器
+      const poolContract = getPoolContract();
+      if (poolContract) {
+        poolContract.removeAllListeners('SwapExecuted');
+      }
     } finally {
       setLoading(false);
     }

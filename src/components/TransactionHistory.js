@@ -1,120 +1,126 @@
-import React from 'react';
-import { Table } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Select, Typography, Tag, Space, Empty } from 'antd';
+import { useTransactions, POOL_TYPES, getPoolName } from '../contexts/TransactionContext';
 
-function TransactionHistory() {
+const { Option } = Select;
+const { Title } = Typography;
+
+const TransactionHistory = ({ poolType: initialPoolType }) => {
+  const { getTransactions, getAllTransactions } = useTransactions();
+  const [selectedPool, setSelectedPool] = useState(initialPoolType || 'all');
+  const [transactions, setTransactions] = useState([]);
+
+  // 当 initialPoolType 或 selectedPool 变化时更新选择的池子
+  useEffect(() => {
+    if (initialPoolType && initialPoolType !== selectedPool) {
+      setSelectedPool(initialPoolType);
+    }
+  }, [initialPoolType, selectedPool]);
+
+  // 根据选择的池子加载交易数据
+  useEffect(() => {
+    const loadTransactions = () => {
+      console.log("Loading transactions for pool:", selectedPool);
+      let txs = [];
+      
+      if (selectedPool === 'all') {
+        txs = getAllTransactions();
+      } else {
+        txs = getTransactions(selectedPool);
+      }
+      
+      console.log("Loaded transactions:", txs.length);
+      setTransactions(txs);
+    };
+    
+    loadTransactions();
+    
+    // 设置定期刷新
+    const intervalId = setInterval(loadTransactions, 10000);
+    return () => clearInterval(intervalId);
+  }, [selectedPool, getTransactions, getAllTransactions]);
+
+  // 显示调试信息
+  console.log("TransactionHistory render. Selected pool:", selectedPool);
+  console.log("Current transactions:", transactions);
+
   const columns = [
-    { title: 'Time', dataIndex: 'time', key: 'time' },
-    { title: 'Type', dataIndex: 'type', key: 'type' },
-    { title: 'USD', dataIndex: 'usd', key: 'usd' },
-    { title: 'TokenA', dataIndex: 'tokena', key: 'tokena' },
-    { title: 'TokenB', dataIndex: 'tokenb', key: 'tokenb' },
-    { title: 'Wallet', dataIndex: 'wallet', key: 'wallet' },
-  ];
-
-  const data = [
     {
-      key: '1',
-      type: 'sell eth',
-      time: '2025-03-22 10:00',
-      usd: '2488',
-      tokena: '1',
-      tokenb: '1.01',
-      wallet: '0x23817349',
+      title: 'Time',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      render: (text) => <span>{text}</span>,
+    },
+    {
+      title: 'Type',
+      key: 'type',
+      dataIndex: 'type',
+      render: (type) => (
+        <Tag color={type === 'swap' ? 'green' : 'blue'}>
+          {type ? type.toUpperCase() : 'UNKNOWN'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Details',
+      key: 'details',
+      render: (_, record) => (
+        <Space size="middle">
+          <span>{record.tokenIn} → {record.tokenOut}</span>
+          <span>{parseFloat(record.amountIn).toFixed(6)} → {parseFloat(record.amountOut).toFixed(6)}</span>
+        </Space>
+      ),
+    },
+    {
+      title: 'Price',
+      dataIndex: 'priceCurrent',
+      key: 'priceCurrent',
+      render: (text) => <span>{parseFloat(text || 0).toFixed(6)}</span>,
+    },
+    {
+      title: 'Transaction',
+      key: 'transaction',
+      render: (_, record) => (
+        record.transactionHash ? (
+          <a 
+            href={`https://sepolia.etherscan.io/tx/${record.transactionHash}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            View
+          </a>
+        ) : <span>N/A</span>
+      ),
     },
   ];
 
-  return <Table columns={columns} dataSource={data} style={{ margin: '20px' }} />;
-}
+  return (
+    <div style={{ padding: '20px' }}>
+      <Title level={4}>Transaction History</Title>
+      <div style={{ marginBottom: '20px' }}>
+        <Select 
+          value={selectedPool} 
+          onChange={setSelectedPool}
+          style={{ width: 200 }}
+        >
+          <Option value="all">All Pools</Option>
+          {Object.keys(POOL_TYPES).map(key => (
+            <Option key={key} value={POOL_TYPES[key]}>{getPoolName(POOL_TYPES[key])}</Option>
+          ))}
+        </Select>
+      </div>
+      
+      {transactions && transactions.length > 0 ? (
+        <Table 
+          columns={columns} 
+          dataSource={transactions.map((tx, index) => ({...tx, key: `${tx.transactionHash || ''}-${index}`}))}
+          pagination={{ pageSize: 10 }} 
+        />
+      ) : (
+        <Empty description="No transactions found" />
+      )}
+    </div>
+  );
+};
 
 export default TransactionHistory;
-
-
-// import React, { useEffect, useState } from 'react';
-// import { Table } from 'antd';
-// import { ethers } from 'ethers';
-// import StableSwapPoolABI from '../abis/StableSwapPool.json'; // 导入 ABI
-
-// function TransactionHistory() {
-//   const [transactions, setTransactions] = useState([]);
-
-//   // 合约地址（替换为你在 Ganache 部署后得到的地址）
-//   const contractAddress = '0xEdF882c5203130b032fBad5C4154f8C0655a0A10'; // 从 truffle migrate 输出中获取
-
-//   // 初始化 provider（连接到 Ganache）
-//   const provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545'); // Ganache GUI 默认端口
-//   const contract = new ethers.Contract(contractAddress, StableSwapPoolABI.abi, provider);
-
-//   // 格式化时间戳
-//   const formatTimestamp = (timestamp) => {
-//     const date = new Date(Number(timestamp) * 1000);
-//     return date.toLocaleString();
-//   };
-
-//   // 获取交易记录
-//   useEffect(() => {
-//     const fetchTransactions = async () => {
-//       try {
-//         const filter = contract.filters.SwapDetailed();
-//         const events = await contract.queryFilter(filter, 0); // 从创世区块开始查询
-
-//         const formattedTransactions = events.map((event, index) => {
-//           const { timestamp, user, feeAmount, amountAfterFee, priceImpact } = event.args;
-//           return {
-//             key: index.toString(),
-//             time: formatTimestamp(timestamp),
-//             type: 'Swap',
-//             usd: 'N/A',
-//             tokena: ethers.formatUnits(amountAfterFee, 18),
-//             tokenb: 'N/A',
-//             wallet: user.slice(0, 6) + '...' + user.slice(-4),
-//             fee: ethers.formatUnits(feeAmount, 18),
-//             priceImpact: Number(priceImpact) / 100 + '%',
-//           };
-//         });
-
-//         setTransactions(formattedTransactions.reverse());
-//       } catch (error) {
-//         console.error('Error fetching transactions:', error);
-//       }
-//     };
-
-//     fetchTransactions();
-
-//     // 实时监听
-//     contract.on('SwapDetailed', (timestamp, user, feeAmount, amountAfterFee, priceImpact) => {
-//       const newTransaction = {
-//         key: transactions.length.toString(),
-//         time: formatTimestamp(timestamp),
-//         type: 'Swap',
-//         usd: 'N/A',
-//         tokena: ethers.formatUnits(amountAfterFee, 18),
-//         tokenb: 'N/A',
-//         wallet: user.slice(0, 6) + '...' + user.slice(-4),
-//         fee: ethers.formatUnits(feeAmount, 18),
-//         priceImpact: Number(priceImpact) / 100 + '%',
-//       };
-//       setTransactions((prev) => [newTransaction, ...prev]);
-//     });
-
-//     return () => {
-//       contract.removeAllListeners('SwapDetailed');
-//     };
-//   }, []);
-
-//   const columns = [
-//     { title: 'Time', dataIndex: 'time', key: 'time' },
-//     { title: 'Type', dataIndex: 'type', key: 'type' },
-//     { title: 'USD', dataIndex: 'usd', key: 'usd' },
-//     { title: 'Token A', dataIndex: 'tokena', key: 'tokena' },
-//     { title: 'Token B', dataIndex: 'tokenb', key: 'tokenb' },
-//     { title: 'Wallet', dataIndex: 'wallet', key: 'wallet' },
-//     { title: 'Fee', dataIndex: 'fee', key: 'fee' },
-//     { title: 'Price Impact', dataIndex: 'priceImpact', key: 'priceImpact' },
-//   ];
-
-//   console.log('StableSwapPoolABI:', StableSwapPoolABI);
-
-//   return <Table columns={columns} dataSource={transactions} style={{ margin: '20px' }} />;
-// }
-
-// export default TransactionHistory;

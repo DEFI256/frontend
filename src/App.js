@@ -407,7 +407,7 @@
 
 // export default App;
 
-
+import { TransactionProvider } from './contexts/TransactionContext';
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, Dropdown, Space, Drawer } from 'antd';
 import { useNavigate, Routes, Route, BrowserRouter as Router } from 'react-router-dom';
@@ -837,7 +837,8 @@ function App() {
   return (
     <ConfigProvider>
       <WalletProvider>
-        <Router><AppContent /></Router>
+      <TransactionProvider>
+        <Router><AppContent /></Router></TransactionProvider>
       </WalletProvider>
     </ConfigProvider>
   );

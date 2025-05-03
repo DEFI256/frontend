@@ -5,9 +5,27 @@ import VolumePage from './VolumePage';
 import HistoryPricePage from './HistoryPricePage';
 import CandlestickPage from './CandlestickPage';
 import TransactionHistory from './TransactionHistory';
-import Action from './Action'; 
+import Action from './Action';
+import { useParams } from 'react-router-dom';
+import { POOL_TYPES } from '../contexts/TransactionContext';
 
 const PoolDetails = () => {
+    const { poolId } = useParams();
+
+    // 将 poolId 映射到 POOL_TYPES
+    const getPoolTypeFromId = (id) => {
+        const poolMap = {
+            '1': POOL_TYPES.USDT_DAI,
+            '2': POOL_TYPES.USDT_ETH,
+            '3': POOL_TYPES.USDT_SHIT,
+            '4': POOL_TYPES.DAI_ETH,
+            '5': POOL_TYPES.SHIT_ETH,
+            '6': POOL_TYPES.DAI_SHIT,
+        };
+        return poolMap[id] || null;
+    };
+
+    const poolType = getPoolTypeFromId(poolId);
     const [selectedPage, setSelectedPage] = useState('Volume'); // 默认显示 VolumePage
     const [timeRange, setTimeRange] = useState('1D'); // 默认时间范围
     const [historyPriceData, setHistoryPriceData] = useState([]);
@@ -20,7 +38,7 @@ const PoolDetails = () => {
         volume: '$187.7M',
         volumeChange: -28.05,
         fees: '$93.8K',
-      };
+    };
     // 定义菜单项
     const menu = (
         <Menu
@@ -36,16 +54,13 @@ const PoolDetails = () => {
         const fetchData = () => {
             // 原始模拟数据
             const rawCandlestickData = [
-                ['2025-03-28 00:00', [1900, 1950, 1880, 2300]],
+                ['2025-03-24 00:00', [1900, 1950, 1880, 2300]],
                 ['2025-03-28 01:00', [2301, 2400, 2250, 2100]],
-                ['2025-03-28 02:00', [2100, 2150, 2050, 2500]],
-                ['2025-03-28 03:00', [2500, 2400, 2400, 2400]],
-                ['2025-03-28 04:00', [2400, 2450, 2350, 2900]],
                 ['2025-03-29 08:00', [3000, 3050, 2950, 3400]],
-                ['2025-04-30 14:00', [3900, 3950, 3850, 4300]],
-                ['2025-05-01 16:00', [4200, 4170, 4150, 4600]],
-                ['2026-04-30 17:00', [4600, 4650, 4550, 4500]],
-                ['2027-04-30 18:00', [3455, 5650, 3350, 5650]],
+                ['2025-04-02 14:00', [3900, 3950, 3850, 4300]],
+                ['2025-04-06 16:00', [4200, 4170, 4150, 4600]],
+                ['2025-04-10 17:00', [4600, 4650, 4550, 4500]],
+                ['2025-04-16 19:00', [3455, 5650, 3350, 5650]],
             ];
 
             // 数据聚合函数
@@ -114,28 +129,28 @@ const PoolDetails = () => {
 
     return (
         <div style={{ display: 'flex', padding: '20px' }}>
-      {/* 左侧内容 */}
-      <div style={{ flex: 3, marginRight: '20px' }}>
-        <div style={{ marginBottom: '20px' }}>
-          <Dropdown overlay={menu} trigger={['click']}>
-            <Button>
-              {selectedPage} <DownOutlined />
-            </Button>
-          </Dropdown>
+            {/* 左侧内容 */}
+            <div style={{ flex: 3, marginRight: '20px' }}>
+                <div style={{ marginBottom: '20px' }}>
+                    <Dropdown overlay={menu} trigger={['click']}>
+                        <Button>
+                            {selectedPage} <DownOutlined />
+                        </Button>
+                    </Dropdown>
+                </div>
+
+                {/* 根据 selectedPage 显示不同的页面 */}
+                {selectedPage === 'Volume' && <VolumePage data={volumeData} timeRange={timeRange} setTimeRange={setTimeRange} />}
+                {selectedPage === 'Price' && <HistoryPricePage data={historyPriceData} timeRange={timeRange} setTimeRange={setTimeRange} />}
+                {selectedPage === 'CandleStick' && <CandlestickPage data={candlestickData} timeRange={timeRange} setTimeRange={setTimeRange} />}
+                {<TransactionHistory poolType={poolType} />}
+            </div>
+
+            {/* 右侧内容 */}
+            <div style={{ flex: 1 }}>
+                <Action stats={stats} /> {/* 放置 Action 组件 */}
+            </div>
         </div>
-
-        {/* 根据 selectedPage 显示不同的页面 */}
-        {selectedPage === 'Volume' && <VolumePage data={volumeData} timeRange={timeRange} setTimeRange={setTimeRange} />}
-        {selectedPage === 'Price' && <HistoryPricePage data={historyPriceData} timeRange={timeRange} setTimeRange={setTimeRange} />}
-        {selectedPage === 'CandleStick' && <CandlestickPage data={candlestickData} timeRange={timeRange} setTimeRange={setTimeRange} />}
-        {<TransactionHistory />}
-      </div>
-
-      {/* 右侧内容 */}
-      <div style={{ flex: 1 }}>
-        <Action stats={stats}  /> {/* 放置 Action 组件 */}
-      </div>
-    </div>
     );
 };
 
