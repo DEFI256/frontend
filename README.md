@@ -1,82 +1,80 @@
-# DEX Frontend
+# ShitSwap
+
+A modern decentralized exchange (DEX) frontend for swapping, providing liquidity, and viewing pool/transaction data on Ethereum-compatible networks.
+
+---
+
+## Project Preview
+
+<!-- Paste your frontend screenshots or GIFs here -->
+
+![alt text](preview/img1.png)
+![alt text](preview/img2.png)
+![alt text](preview/img3.png)
+![alt text](preview/img4.png)
+![alt text](preview/img5.png)
+![alt text](preview/img6.png)
+![alt text](preview/img7.png)
+![alt text](preview/img8.png)
+![alt text](preview/img9.png)
+![alt text](preview/img10.png)
+![alt text](preview/img11.png)
+![alt text](preview/img12.png)
+![alt text](preview/img13.png)
+![alt text](preview/img14.png)
 
 ## Overview
 
-This is the frontend for a Decentralized Exchange (DEX), built for the COMP5568 - Decentralized Finance final project (Semester 2, Winter 2025). It connects to a blockchain smart contract, enabling wallet integration, token swapping, and transaction history display.
-
-- **Features**: MetaMask wallet connection, token swap (2+ tokens), simple UI.
-- **Tech**: React, Ant Design v5, Ethers.js v6, JavaScript.
+ShitSwap is a React-based frontend for a decentralized exchange (DEX) supporting MetaMask wallet connection, token swaps, liquidity management, and real-time transaction history. It interacts directly with Ethereum smart contracts using ethers.js, providing a seamless DeFi user experience.
 
 ---
 
-## Prerequisites
+## Features
 
-- Node.js (14+)
+- **MetaMask Wallet Integration**  
+  Connect and manage your Ethereum wallet securely.
+
+- **Token Swapping**  
+  Swap between multiple tokens with real-time price and slippage protection.
+
+- **Liquidity Management**  
+  Add or remove liquidity to supported pools.
+
+- **Pool & Token Explorer**  
+  View pool statistics, token info, and historical data.
+
+- **Transaction History**  
+  View and filter all swap and liquidity transactions, persisted across sessions.
+
+- **Responsive UI**  
+  Built with Ant Design v5 and styled-components for a modern look.
+
+---
+
+## Tech Stack
+
+- **React** (SPA framework)
+- **Ant Design v5** (UI components)
+- **ethers.js v6** (blockchain interaction)
+- **styled-components** (CSS-in-JS)
+- **React Context** (global state management)
+- **localStorage** (transaction history persistence)
+- **Echarts** (data visualization)
+- **React Router v7** (routing)
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14+)
 - MetaMask browser extension
-- Deployed DEX smart contract (e.g., Sepolia or Hardhat)
+- Deployed ShitSwap smart contracts (e.g., Sepolia or Hardhat localnet)
 
----
+### Setup
 
-## Setup & Run
-
-1. **Clone Repository**
+1. **Clone the Repository**
    ```bash
    git clone <your-repo-url>
-   cd dex-frontend
-   ```
-
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure Contract**
-   - Edit `src/App.js`: Replace `SWAP_ADDRESS` with your contract address.
-   - Update `src/abis/StableSwapPool.json` with your contract ABI.
-
-4. **Start Local Backend (Optional)**
-   - For Hardhat: `npx hardhat node` in a separate terminal.
-
-5. **Run Frontend**
-   ```bash
-   npm start
-   ```
-   - Opens at `http://localhost:3000`.
-
-6. **Test**
-   - Connect MetaMask (Hardhat: `http://127.0.0.1:8545`, or Sepolia).
-   - Swap tokens and check history.
-
----
-
-## Structure
-
-```
-dex-frontend/
-├── src/
-│   ├── abis/StableSwapPool.json
-│   ├── components/
-│   │   ├── WalletConnect.js
-│   │   ├── Swap.js
-│   │   └── TransactionHistory.js
-│   ├── App.js
-│   ├── index.js
-│   └── index.css
-├── package.json
-└── README.md
-```
-
----
-
-## Troubleshooting
-
-- **MetaMask not detected**: Install extension, refresh page.
-- **Swap fails**: Check contract address, network, and token balances.
-- **UI issues**: Ensure `antd@5` is installed (`npm install antd`).
-
----
-
-## Notes
-
-- Ant Design v5 uses CSS-in-JS; no need for `antd/dist/antd.css`.
-- Expand to 10 tokens by editing `tokens` in `Swap.js`.
+   cd frontend
